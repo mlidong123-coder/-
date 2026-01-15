@@ -33,31 +33,11 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showWinnersList, setShowWinnersList] = useState(false);
   const [tempWinners, setTempWinners] = useState<Participant[]>([]);
-  
-  // 5x5 网格的滚动池
-  const [gridPools, setGridPools] = useState<string[][]>([]);
+  const [rollingNames, setRollingNames] = useState<string[]>([]);
   
   const rollAudioRef = useRef<HTMLAudioElement | null>(null);
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // 初始化滚动名单池，确保全名单库循环滚动
-  useEffect(() => {
-    if (state.participants.length > 0) {
-      const allNames = state.participants.map(p => p.name);
-      const newPools = Array.from({ length: 25 }).map(() => {
-        // 每个格子生成一个打乱的完整名单
-        let shuffled = [...allNames].sort(() => Math.random() - 0.5);
-        // 保证名单长度足以填充动画区间
-        while (shuffled.length < 30) {
-          shuffled = [...shuffled, ...shuffled];
-        }
-        return shuffled;
-      });
-      setGridPools(newPools);
-    } else {
-      setGridPools([]);
-    }
-  }, [state.participants]);
+  const rollingIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     saveState(state);
@@ -68,12 +48,6 @@ const App: React.FC = () => {
   const allPrizeWinners = state.winners.filter(w => w.prizeId === currentPrizeId);
   const remainingCount = currentPrize ? currentPrize.totalCount - allPrizeWinners.length : 0;
 
-  const getScrollSpeed = (index: number) => {
-    const base = 0.2;
-    const offset = (index % 12) * 0.035;
-    return `${base + offset}s`;
-  };
-
   const navigatePrize = (dir: 'prev' | 'next') => {
     if (isDrawing) return;
     const count = state.prizes.length;
@@ -82,6 +56,7 @@ const App: React.FC = () => {
     if (newIndex >= count) newIndex = 0;
     setCurrentPrizeId(state.prizes[newIndex].id);
     setTempWinners([]);
+    setRollingNames([]);
     setShowWinnersList(false);
   };
 
@@ -108,9 +83,24 @@ const App: React.FC = () => {
       rollAudioRef.current.loop = true;
       rollAudioRef.current.play().catch(() => {});
     }
+
+    // 开启名字无序循环滚动
+    const batchSize = Math.min(currentPrize.drawBatch, remainingCount);
+    rollingIntervalRef.current = window.setInterval(() => {
+      const randomNames = Array.from({ length: batchSize }).map(() => {
+        const randomIndex = Math.floor(Math.random() * state.participants.length);
+        return state.participants[randomIndex].name;
+      });
+      setRollingNames(randomNames);
+    }, 60);
   };
 
   const handleStop = () => {
+    if (rollingIntervalRef.current) {
+      clearInterval(rollingIntervalRef.current);
+      rollingIntervalRef.current = null;
+    }
+
     const result = performDraw(state, currentPrizeId);
     if (result.error) {
       alert(result.error);
@@ -120,6 +110,7 @@ const App: React.FC = () => {
     }
 
     setTempWinners(result.winners);
+    setRollingNames([]);
     setIsDrawing(false);
     
     if (rollAudioRef.current) {
@@ -144,17 +135,15 @@ const App: React.FC = () => {
     }));
   };
 
-  // 动态调整中奖区域的卡片大小，确保一行 5 个时的视觉平衡
-  const getResultsDisplayConfig = () => {
-    const count = tempWinners.length;
+  // 动态计算样式配置
+  const getDisplayConfig = (count: number) => {
     if (count <= 1) return { fontSize: 'text-9xl', cardSize: 'w-[450px] h-[260px]' };
     if (count <= 4) return { fontSize: 'text-7xl', cardSize: 'w-[300px] h-[180px]' };
-    // 一行 5 个时，容器宽度 1152px，单个卡片 200px 左右最为平均
     if (count <= 10) return { fontSize: 'text-5xl', cardSize: 'w-[200px] h-[130px]' };
     return { fontSize: 'text-4xl', cardSize: 'w-[180px] h-[110px]' };
   };
 
-  const gridConfig = getResultsDisplayConfig();
+  const currentConfig = getDisplayConfig(isDrawing ? rollingNames.length : tempWinners.length);
 
   return (
     <div className="relative min-h-screen w-full flex flex-col overflow-x-hidden">
@@ -194,26 +183,19 @@ const App: React.FC = () => {
           <div className="h-full w-full glass-dark border-gold-pro rounded-[2.5rem] overflow-hidden flex items-center justify-center relative shadow-2xl">
             
             {isDrawing ? (
-              // 抽奖开始：5x5 网格按名单列表循环滚动
-              <div className="grid grid-cols-5 gap-3 w-full h-full p-4 md:p-8">
-                {gridPools.length > 0 ? gridPools.map((pool, i) => (
-                  <div key={i} className="flex-1 glass-dark rounded-2xl flex items-center justify-center overflow-hidden border border-yellow-500/10 bg-black/30">
-                    <div className="h-full w-full relative">
-                      <div 
-                        className="animate-grid-scroll absolute inset-0 flex flex-col items-center"
-                        style={{ '--scroll-speed': getScrollSpeed(i) } as any}
-                      >
-                        {[...pool, ...pool].map((name, idx) => (
-                          <div key={idx} className="h-28 min-h-[112px] flex items-center justify-center text-4xl md:text-5xl font-black text-yellow-500/30 italic drop-shadow-lg tracking-tighter">
-                            {name}
-                          </div>
-                        ))}
+              // 抽奖开始：名字按名单列表无序循环滚动显示
+              <div className="w-full h-full flex items-center justify-center p-8 overflow-y-auto scrollbar-hide">
+                <div className="flex flex-wrap justify-center content-center gap-8 max-w-full">
+                  {rollingNames.map((name, i) => (
+                    <div key={i} className="relative flex justify-center items-center">
+                      <div className={`relative bg-black/40 rounded-[2.5rem] border-2 border-yellow-500/20 flex flex-col items-center justify-center ${currentConfig.cardSize}`}>
+                        <div className={`text-yellow-500 font-festive font-black leading-none italic opacity-80 ${currentConfig.fontSize}`}>
+                          {name}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )) : (
-                  <div className="col-span-5 flex items-center justify-center text-yellow-600/30 text-xl font-bold uppercase tracking-widest">请先录入名单库</div>
-                )}
+                  ))}
+                </div>
               </div>
             ) : tempWinners.length > 0 ? (
               // 抽奖停止：中奖区域一行最多5个平均分布，横向纵向居中
@@ -222,8 +204,8 @@ const App: React.FC = () => {
                   {tempWinners.map(winner => (
                     <div key={winner.id} className="relative animate-[zoom-in_0.5s_ease-out] flex justify-center items-center">
                       <div className="absolute -inset-10 bg-yellow-400 opacity-20 blur-[50px] rounded-full"></div>
-                      <div className={`relative bg-gradient-to-b from-yellow-50 via-yellow-400 to-yellow-600 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.8)] border-4 border-yellow-100 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 ${gridConfig.cardSize}`}>
-                        <div className={`text-red-950 font-festive font-black leading-none drop-shadow-xl text-center px-4 ${gridConfig.fontSize}`}>
+                      <div className={`relative bg-gradient-to-b from-yellow-50 via-yellow-400 to-yellow-600 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.8)] border-4 border-yellow-100 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 ${currentConfig.cardSize}`}>
+                        <div className={`text-red-950 font-festive font-black leading-none drop-shadow-xl text-center px-4 ${currentConfig.fontSize}`}>
                           {winner.name}
                         </div>
                         {tempWinners.length <= 15 && (
