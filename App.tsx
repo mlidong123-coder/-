@@ -40,20 +40,21 @@ const App: React.FC = () => {
   const rollAudioRef = useRef<HTMLAudioElement | null>(null);
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 初始化滚动名单池，确保每个格子都有足够的长序列进行循环滚动
+  // 初始化滚动名单池，循环所有姓名
   useEffect(() => {
     if (state.participants.length > 0) {
       const allNames = state.participants.map(p => p.name);
       const newPools = Array.from({ length: 25 }).map(() => {
-        // 每个格子生成一个打乱的完整名单，并重复以防滚动过快看到空白
+        // 将全量名单打乱并循环
         let shuffled = [...allNames].sort(() => Math.random() - 0.5);
-        // 如果名单太短，重复几次以增加视觉连续性
-        while (shuffled.length < 20) {
+        while (shuffled.length < 40) {
           shuffled = [...shuffled, ...shuffled];
         }
         return shuffled;
       });
       setGridPools(newPools);
+    } else {
+      setGridPools([]);
     }
   }, [state.participants]);
 
@@ -67,9 +68,8 @@ const App: React.FC = () => {
   const remainingCount = currentPrize ? currentPrize.totalCount - allPrizeWinners.length : 0;
 
   const getScrollSpeed = (index: number) => {
-    // 基础速度 + 随机偏移，让 25 个格子看起来参差不齐
-    const base = 0.2;
-    const offset = (index % 7) * 0.05;
+    const base = 0.22;
+    const offset = (index % 8) * 0.045;
     return `${base + offset}s`;
   };
 
@@ -143,65 +143,40 @@ const App: React.FC = () => {
     }));
   };
 
-  // 获取结果网格配置：固定每排最多 5 个，根据数量调整大小
-  const getResultsGridConfig = () => {
+  const getResultsDisplayConfig = () => {
     const count = tempWinners.length;
-    if (count <= 1) return { fontSize: 'text-9xl', cardSize: 'w-[400px] h-[240px]', padding: 'p-10' };
-    if (count <= 4) return { fontSize: 'text-7xl', cardSize: 'w-[280px] h-[180px]', padding: 'p-8' };
-    if (count <= 10) return { fontSize: 'text-5xl', cardSize: 'w-[180px] h-[120px]', padding: 'p-6' };
-    return { fontSize: 'text-3xl', cardSize: 'w-[150px] h-[90px]', padding: 'p-4' };
+    if (count <= 1) return { fontSize: 'text-9xl', cardSize: 'w-[450px] h-[260px]' };
+    if (count <= 4) return { fontSize: 'text-7xl', cardSize: 'w-[300px] h-[180px]' };
+    if (count <= 10) return { fontSize: 'text-5xl', cardSize: 'w-[200px] h-[130px]' };
+    return { fontSize: 'text-3xl', cardSize: 'w-[160px] h-[100px]' };
   };
 
-  const gridConfig = getResultsGridConfig();
+  const gridConfig = getResultsDisplayConfig();
 
   return (
-    <div className="relative h-screen w-full flex flex-col overflow-hidden">
+    <div className="relative min-h-screen w-full flex flex-col overflow-x-hidden">
       <audio ref={rollAudioRef} src="https://assets.mixkit.co/active_storage/sfx/2012/2012-preview.mp3" />
       <audio ref={winAudioRef} src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" />
 
-      {/* 装饰挂饰 */}
-      <div className="absolute top-0 left-20 lantern-box hidden lg:block">
-        <div className="w-16 h-24 bg-red-700 border-2 border-yellow-500 rounded-lg shadow-2xl flex items-center justify-center">
-          <span className="text-yellow-400 font-festive text-xl">福</span>
-        </div>
-      </div>
-      <div className="absolute top-0 right-20 lantern-box hidden lg:block" style={{animationDelay: '1s'}}>
-        <div className="w-16 h-24 bg-red-700 border-2 border-yellow-500 rounded-lg shadow-2xl flex items-center justify-center">
-          <span className="text-yellow-400 font-festive text-xl">瑞</span>
-        </div>
-      </div>
-
-      <header className="px-10 py-6 flex justify-between items-center z-20">
-        <div className="flex items-center gap-6">
-          <div className="p-3 bg-gradient-to-b from-yellow-300 to-yellow-600 rounded-full border-4 border-yellow-100 shadow-xl">
-            <div className="w-12 h-12 bg-red-900 rounded-full flex items-center justify-center text-yellow-300">
-               <ICONS.Trophy />
-            </div>
-          </div>
-          <div>
-            <h1 className="text-4xl font-black font-festive text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-lg tracking-widest">
-              2025 辉煌盛典
-            </h1>
-            <p className="text-yellow-600/60 text-[10px] font-bold tracking-[0.3em] uppercase">Annual Gala Prize Draw</p>
-          </div>
-        </div>
+      {/* 头部布局：仅保留右侧设置按钮 */}
+      <header className="px-10 py-6 flex justify-end items-center z-20">
         <button 
           onClick={() => setShowSettings(true)}
-          className="p-4 glass-dark rounded-full text-yellow-500 hover:bg-yellow-500 hover:text-red-950 transition-all border-yellow-600/30"
+          className="p-4 glass-dark rounded-full text-yellow-500 hover:bg-yellow-500 hover:text-red-950 transition-all border-yellow-600/30 shadow-lg"
         >
           <ICONS.Settings />
         </button>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-10 pb-10 z-10 relative">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 md:px-10 pb-10 z-10 relative">
         
-        {/* 奖项标题与左右切换 */}
-        <div className="mb-6 flex items-center justify-center gap-8">
+        {/* 奖项控制区 */}
+        <div className="mb-6 flex items-center justify-center gap-6 md:gap-12">
           <button onClick={() => navigatePrize('prev')} className="prize-nav-btn p-2">
             <ICONS.ArrowLeft />
           </button>
-          <div className="text-center min-w-[340px]">
-            <h2 className="text-7xl font-black font-festive text-yellow-500 drop-shadow-[0_0_15px_rgba(252,211,77,0.5)] leading-tight">
+          <div className="text-center min-w-[280px] md:min-w-[400px]">
+            <h2 className="text-5xl md:text-7xl font-black font-festive text-yellow-500 drop-shadow-[0_0_15px_rgba(252,211,77,0.5)] leading-tight">
               {currentPrize?.name}
             </h2>
             <div className="mt-2 inline-block px-6 py-1 glass-dark rounded-full border-yellow-600/30 text-yellow-600/70 font-bold text-sm">
@@ -213,93 +188,94 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        {/* 抽奖核心展示区 */}
-        <div className="relative w-full max-w-6xl h-[560px]">
+        {/* 核心显示区域 */}
+        <div className="relative w-full max-w-6xl min-h-[580px] h-[580px]">
           <div className="absolute -inset-1.5 border-gold-pro opacity-50 rounded-[2.5rem] pointer-events-none"></div>
-          <div className="h-full w-full glass-dark border-gold-pro rounded-[2.5rem] overflow-hidden flex items-center justify-center relative">
+          <div className="h-full w-full glass-dark border-gold-pro rounded-[2.5rem] overflow-hidden flex items-center justify-center relative shadow-2xl">
             
             {isDrawing ? (
-              // 5x5 滚动网格，显示大字体滚动姓名
-              <div className="grid grid-cols-5 gap-3 w-full h-full p-6">
-                {gridPools.map((pool, i) => (
-                  <div key={i} className="flex-1 glass-dark rounded-2xl flex items-center justify-center overflow-hidden border border-yellow-500/10 bg-black/20">
+              // 5x5 滚动网格：循环不同姓名
+              <div className="grid grid-cols-5 gap-3 w-full h-full p-4 md:p-8">
+                {gridPools.length > 0 ? gridPools.map((pool, i) => (
+                  <div key={i} className="flex-1 glass-dark rounded-2xl flex items-center justify-center overflow-hidden border border-yellow-500/10 bg-black/30">
                     <div className="h-full w-full relative">
                       <div 
                         className="animate-grid-scroll absolute inset-0 flex flex-col items-center"
                         style={{ '--scroll-speed': getScrollSpeed(i) } as any}
                       >
                         {[...pool, ...pool].map((name, idx) => (
-                          <div key={idx} className="h-28 min-h-[112px] flex items-center justify-center text-5xl font-black text-yellow-500/30 italic drop-shadow-lg tracking-tighter">
+                          <div key={idx} className="h-28 min-h-[112px] flex items-center justify-center text-4xl md:text-5xl font-black text-yellow-500/30 italic drop-shadow-lg tracking-tighter">
                             {name}
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="col-span-5 flex items-center justify-center text-yellow-600/30 text-xl font-bold uppercase tracking-widest">请先录入名单</div>
+                )}
               </div>
             ) : tempWinners.length > 0 ? (
-              // 中奖结果：每排最多 5 个，居中对齐
-              <div className={`flex flex-wrap items-center justify-center gap-6 ${gridConfig.padding} w-full h-full overflow-y-auto scrollbar-hide`}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-items-center">
-                  {tempWinners.map(winner => (
-                    <div key={winner.id} className="relative group animate-[zoom-in_0.4s_ease-out] flex justify-center">
-                      <div className="absolute -inset-6 bg-yellow-400 opacity-25 blur-[40px] rounded-full"></div>
-                      <div className={`relative bg-gradient-to-b from-yellow-50 via-yellow-400 to-yellow-600 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.7)] border-4 border-yellow-100 flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 ${gridConfig.cardSize}`}>
-                        <div className={`text-red-950 font-festive font-black leading-none drop-shadow-md ${gridConfig.fontSize}`}>
-                          {winner.name}
+              // 中奖区域：横向纵向居中，一排最多 5 个名单
+              <div className="w-full h-full flex items-center justify-center p-8 overflow-y-auto scrollbar-hide">
+                <div className="flex flex-wrap items-center justify-center gap-8 max-w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 justify-items-center items-center">
+                    {tempWinners.map(winner => (
+                      <div key={winner.id} className="relative animate-[zoom-in_0.5s_ease-out] flex justify-center items-center">
+                        <div className="absolute -inset-10 bg-yellow-400 opacity-20 blur-[50px] rounded-full"></div>
+                        <div className={`relative bg-gradient-to-b from-yellow-50 via-yellow-400 to-yellow-600 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.8)] border-4 border-yellow-100 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 ${gridConfig.cardSize}`}>
+                          <div className={`text-red-950 font-festive font-black leading-none drop-shadow-xl ${gridConfig.fontSize}`}>
+                            {winner.name}
+                          </div>
+                          {tempWinners.length <= 10 && (
+                            <div className="mt-3 text-red-900 text-[10px] font-black tracking-[0.4em] uppercase opacity-70">Lucky Winner</div>
+                          )}
                         </div>
-                        {tempWinners.length <= 10 && (
-                          <div className="mt-2 text-red-900 text-[10px] font-black tracking-widest uppercase opacity-60">Winner</div>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
               // 默认显示礼物盒
-              <div className="flex flex-col items-center gap-8">
+              <div className="flex flex-col items-center gap-10">
                 <GiftBox />
-                <div className="text-yellow-500/20 text-sm font-bold tracking-[1.5em] ml-[1.5em] uppercase animate-pulse">Ready to draw</div>
+                <div className="text-yellow-500/20 text-sm font-bold tracking-[1.8em] ml-[1.8em] uppercase animate-pulse text-center">Ready to open</div>
               </div>
             )}
           </div>
         </div>
 
         {/* 底部交互区 */}
-        <div className="mt-10 flex items-center justify-center gap-10">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-6 md:gap-10">
           
-          {/* 抽取人数调节 */}
           <div className="flex items-center glass-dark rounded-2xl p-1 border-yellow-600/20">
              <button onClick={() => handleBatchChange(-1)} className="w-12 h-12 flex items-center justify-center text-yellow-500 hover:bg-yellow-500/10 rounded-xl transition-colors font-black text-2xl">-</button>
              <div className="px-6 flex flex-col items-center min-w-[100px]">
-                <span className="text-[10px] text-yellow-600/50 font-bold uppercase">每次抽取</span>
+                <span className="text-[10px] text-yellow-600/50 font-bold uppercase tracking-widest text-center">每次抽取</span>
                 <span className="text-2xl font-black text-yellow-400">{currentPrize?.drawBatch || 0} <span className="text-xs">人</span></span>
              </div>
              <button onClick={() => handleBatchChange(1)} className="w-12 h-12 flex items-center justify-center text-yellow-500 hover:bg-yellow-500/10 rounded-xl transition-colors font-black text-2xl">+</button>
           </div>
 
-          {/* 开始/停止主按钮 */}
           <button 
             onClick={startDraw}
             disabled={!isDrawing && (remainingCount <= 0 || state.participants.length === 0)}
-            className={`btn-gold-3d px-24 py-6 rounded-[2rem] text-4xl font-black text-red-950 transition-all ${
-              !isDrawing && remainingCount <= 0 ? 'grayscale pointer-events-none opacity-50' : 'hover:brightness-110'
+            className={`btn-gold-3d px-20 md:px-28 py-5 md:py-7 rounded-[2.5rem] text-4xl font-black text-red-950 transition-all ${
+              !isDrawing && (remainingCount <= 0 || state.participants.length === 0) ? 'grayscale pointer-events-none opacity-50' : 'hover:brightness-110 hover:scale-105 active:scale-95'
             }`}
           >
             {isDrawing ? '停止' : '开始'}
           </button>
 
-          {/* 已中奖统计与名单 */}
           <div className="flex items-center gap-4">
              <div className="glass-dark px-6 py-2 rounded-2xl border-yellow-600/20 text-center min-w-[120px]">
-                <div className="text-[10px] text-yellow-600/50 font-bold uppercase">已中奖</div>
+                <div className="text-[10px] text-yellow-600/50 font-bold uppercase tracking-widest">已产生</div>
                 <div className="text-2xl font-black text-yellow-400">{allPrizeWinners.length} <span className="text-xs">人</span></div>
              </div>
              <button 
                 onClick={() => setShowWinnersList(!showWinnersList)}
-                className="glass-dark p-4 rounded-2xl text-yellow-500 hover:bg-yellow-500 hover:text-red-950 transition-all border-yellow-600/30 flex items-center gap-2 font-bold"
+                className="glass-dark p-4 rounded-2xl text-yellow-500 hover:bg-yellow-500 hover:text-red-950 transition-all border-yellow-600/30 flex items-center gap-2 font-bold shadow-lg"
               >
                 <ICONS.Trophy />
                 <span className="text-sm">中奖名单</span>
@@ -308,35 +284,34 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* 侧边中奖名单抽屉 */}
-      <aside className={`fixed right-6 top-32 w-72 z-40 transition-all duration-500 transform ${showWinnersList ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'}`}>
-         <div className="glass-dark rounded-[2rem] p-6 border-yellow-600/30 max-h-[65vh] flex flex-col shadow-2xl">
+      <aside className={`fixed right-6 top-32 w-80 z-40 transition-all duration-500 transform ${showWinnersList ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'}`}>
+         <div className="glass-dark rounded-[2.5rem] p-7 border-yellow-600/30 max-h-[70vh] flex flex-col shadow-[0_30px_60px_rgba(0,0,0,0.8)]">
             <div className="flex items-center justify-between mb-6 border-b border-yellow-600/10 pb-4">
                <h3 className="text-yellow-500 font-bold flex flex-col">
                  <span className="text-[10px] text-yellow-600/50 uppercase font-black tracking-widest">{currentPrize?.name}</span>
-                 <span className="flex items-center gap-2 italic text-lg"><ICONS.Trophy /> 获奖名单</span>
+                 <span className="flex items-center gap-2 italic text-xl"><ICONS.Trophy /> 获奖名单</span>
                </h3>
-               <button onClick={() => setShowWinnersList(false)} className="text-yellow-600 hover:text-yellow-400">
+               <button onClick={() => setShowWinnersList(false)} className="text-yellow-600 hover:text-yellow-400 transition-colors">
                  <ICONS.Back />
                </button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-3 scrollbar-hide">
                {[...allPrizeWinners].reverse().map((w, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/5 group hover:bg-yellow-500/10 transition-colors">
-                     <div className="w-10 h-10 bg-yellow-600/20 rounded-full flex items-center justify-center text-yellow-400 font-bold border border-yellow-600/20">
+                  <div key={i} className="flex items-center gap-4 p-3.5 bg-white/5 rounded-2xl border border-white/5 group hover:bg-yellow-500/10 transition-colors">
+                     <div className="w-11 h-11 bg-yellow-600/20 rounded-full flex items-center justify-center text-yellow-400 font-bold border border-yellow-600/20">
                         {w.participantName.charAt(0)}
                      </div>
                      <div className="flex-1">
-                        <div className="font-bold text-yellow-100 text-sm">{w.participantName}</div>
-                        <div className="text-[10px] text-yellow-600 flex justify-between">
-                           <span>幸运入选</span>
-                           <span className="opacity-40">{new Date(w.drawTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <div className="font-bold text-yellow-100 text-base">{w.participantName}</div>
+                        <div className="text-[10px] text-yellow-600 flex justify-between mt-1">
+                           <span className="font-bold uppercase tracking-wider">Glorious Entry</span>
+                           <span className="opacity-40 tabular-nums">{new Date(w.drawTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
                      </div>
                   </div>
                ))}
                {allPrizeWinners.length === 0 && (
-                 <div className="text-center py-20 text-white/5 text-xs italic">虚位以待...</div>
+                 <div className="text-center py-20 text-white/5 text-xs italic">尚未揭晓，敬请期待</div>
                )}
             </div>
          </div>

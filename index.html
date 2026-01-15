@@ -19,11 +19,10 @@
             font-family: 'Noto Sans SC', sans-serif;
             background-color: var(--deep-red);
             color: #fff;
-            overflow: hidden;
-            height: 100vh;
-            background-image: 
-                radial-gradient(circle at 50% 50%, #800000 0%, #4a0404 100%),
-                url('https://www.transparenttextures.com/patterns/dark-leather.png');
+            /* 允许纵向滚动以防止小屏幕显示不全 */
+            overflow-y: auto;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 50%, #800000 0%, #4a0404 100%);
         }
 
         .font-festive {
@@ -60,17 +59,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .lantern-box {
-            position: absolute;
-            top: -20px;
-            animation: swing 3s ease-in-out infinite alternate;
-            transform-origin: top center;
-        }
-        @keyframes swing {
-            from { transform: rotate(-3deg); }
-            to { transform: rotate(3deg); }
-        }
-
         @keyframes box-shake {
             0%, 100% { transform: rotate(0) scale(1); }
             25% { transform: rotate(-3deg) scale(1.02); }
@@ -103,7 +91,6 @@
 </script>
 </head>
 <body>
-    <div id="root" class="relative z-10 h-full"></div>
-    <script type="module" src="/index.tsx"></script>
+    <div id="root" class="relative z-10 min-h-full"></div>
 </body>
 </html>
