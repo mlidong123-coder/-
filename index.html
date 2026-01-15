@@ -4,28 +4,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>公司年会至尊抽奖系统</title>
+    <title>2025 蛇年大吉 - 公司年会尊享抽奖</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --gold-primary: #fcd34d;
+            --gold-dark: #b45309;
+            --festive-red: #991b1b;
+        }
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            background-color: #7c0000;
+            background-color: #4a0404;
             color: #fff;
             overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 50%, #800000 0%, #4a0404 100%),
+                url('https://www.transparenttextures.com/patterns/dark-leather.png');
         }
         .font-festive {
             font-family: 'Ma Shan Zheng', cursive;
         }
-        @keyframes scroll-names {
+        /* 金色发光文字 */
+        .text-glow-gold {
+            text-shadow: 0 0 10px rgba(252, 211, 77, 0.8), 0 0 20px rgba(180, 83, 9, 0.5);
+        }
+        /* 拟物化金色边框 */
+        .gold-border-fancy {
+            border: 4px solid;
+            border-image: linear-gradient(to bottom right, #fcd34d, #b45309, #fde68a, #78350f) 1;
+            box-shadow: 0 0 30px rgba(180, 83, 9, 0.4);
+        }
+        /* 灯笼摆动动画 */
+        @keyframes lantern-swing {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+        .lantern {
+            animation: lantern-swing 3s ease-in-out infinite alternate;
+            transform-origin: top center;
+        }
+        /* 名单滚动动画优化 */
+        @keyframes slot-scroll {
             0% { transform: translateY(0); }
             100% { transform: translateY(-50%); }
         }
-        .scrolling-list {
-            animation: scroll-names 0.5s linear infinite;
+        .slot-animation {
+            animation: slot-scroll 0.15s linear infinite;
         }
-        .red-gradient {
-            background: radial-gradient(circle, #e63946 0%, #7c0000 100%);
+        /* 玻璃拟态卡片 */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* 粒子背景模拟 */
+        .particles {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background-image: radial-gradient(circle, rgba(252, 211, 77, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
         }
     </style>
 <script type="importmap">
@@ -38,8 +78,8 @@
 }
 </script>
 </head>
-<body class="red-gradient min-h-screen">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+<body class="min-h-screen">
+    <div class="particles"></div>
+    <div id="root" class="relative z-10"></div>
 </body>
 </html>

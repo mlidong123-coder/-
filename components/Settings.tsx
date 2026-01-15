@@ -64,155 +64,143 @@ const Settings: React.FC<SettingsProps> = ({ state, updateState, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto p-4 md:p-8">
-      <div className="max-w-4xl mx-auto bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6">
-        <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
-          <h2 className="text-3xl font-bold text-yellow-500">后台设置</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition">
+    <div className="fixed inset-0 bg-black/80 z-[100] backdrop-blur-md flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl bg-red-950/90 border-2 border-yellow-600/50 rounded-3xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col h-[85vh]">
+        {/* 标题栏 */}
+        <div className="p-6 border-b border-yellow-600/20 flex justify-between items-center bg-gradient-to-r from-red-900/50 to-transparent">
+          <h2 className="text-3xl font-black font-festive text-yellow-500 tracking-wider">系统后台配置</h2>
+          <button onClick={onClose} className="p-2 hover:bg-yellow-500/10 rounded-full text-yellow-600 transition">
             <ICONS.Back />
           </button>
         </div>
 
-        <div className="flex gap-4 mb-6">
-          <button 
-            onClick={() => setActiveTab('names')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'names' ? 'bg-yellow-600 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
-          >
-            名单管理
-          </button>
-          <button 
-            onClick={() => setActiveTab('prizes')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'prizes' ? 'bg-yellow-600 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
-          >
-            奖项设置
-          </button>
-          <button 
-            onClick={() => setActiveTab('rigging')}
-            className={`px-4 py-2 rounded-lg transition ${activeTab === 'rigging' ? 'bg-yellow-600 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
-          >
-            内定 & 屏蔽
-          </button>
-        </div>
-
-        {activeTab === 'names' && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-400">输入参会人员姓名，每行一个姓名：</p>
-            <textarea
-              className="w-full h-64 bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
-              value={rawNames}
-              onChange={(e) => setRawNames(e.target.value)}
-              placeholder="张三&#10;李四&#10;王五..."
-            />
-            <button 
-              onClick={handleImportNames}
-              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-xl transition shadow-lg"
-            >
-              保存并重新导入人员名单
-            </button>
+        {/* 侧边栏/导航 */}
+        <div className="flex flex-1 overflow-hidden">
+          <div className="w-48 bg-black/20 p-4 border-r border-yellow-600/10 space-y-2">
+            {[
+              { id: 'names', label: '名单管理' },
+              { id: 'prizes', label: '奖项设置' },
+              { id: 'rigging', label: '内定策略' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`w-full text-left px-4 py-3 rounded-xl font-bold transition ${
+                  activeTab === tab.id 
+                  ? 'bg-yellow-600 text-red-900 shadow-lg' 
+                  : 'text-yellow-600/60 hover:bg-white/5 hover:text-yellow-500'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+            <div className="mt-10 pt-10 border-t border-yellow-600/10">
+               <button 
+                  onClick={() => confirm('确定清空所有中奖记录？') && updateState({ ...state, winners: [] })}
+                  className="text-red-500 text-xs px-4 hover:underline"
+               >
+                 重置中奖记录
+               </button>
+            </div>
           </div>
-        )}
 
-        {activeTab === 'prizes' && (
-          <div className="space-y-4">
-            {state.prizes.map(prize => (
-              <div key={prize.id} className="bg-white/5 p-4 rounded-xl border border-white/10 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">奖项名称</label>
-                  <input 
-                    className="w-full bg-black/20 border border-white/10 rounded px-2 py-1 text-white" 
-                    value={prize.name} 
-                    onChange={(e) => updatePrize(prize.id, 'name', e.target.value)}
-                  />
+          {/* 内容区 */}
+          <div className="flex-1 overflow-y-auto p-8">
+            {activeTab === 'names' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-end">
+                  <label className="text-yellow-500 font-bold">参会人员导入 (每行一个姓名)</label>
+                  <span className="text-xs text-white/30">当前共计: {state.participants.length} 人</span>
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">总名额</label>
-                  <input 
-                    type="number" 
-                    className="w-full bg-black/20 border border-white/10 rounded px-2 py-1 text-white" 
-                    value={prize.totalCount} 
-                    onChange={(e) => updatePrize(prize.id, 'totalCount', parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">单次抽取人数</label>
-                  <input 
-                    type="number" 
-                    className="w-full bg-black/20 border border-white/10 rounded px-2 py-1 text-white" 
-                    value={prize.drawBatch} 
-                    onChange={(e) => updatePrize(prize.id, 'drawBatch', parseInt(e.target.value) || 0)}
-                  />
-                </div>
+                <textarea
+                  className="w-full h-[400px] bg-black/40 border border-yellow-600/20 rounded-2xl p-6 text-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 transition font-mono"
+                  value={rawNames}
+                  onChange={(e) => setRawNames(e.target.value)}
+                  placeholder="请输入姓名..."
+                />
                 <button 
-                  onClick={() => updateState({ ...state, prizes: state.prizes.filter(p => p.id !== prize.id) })}
-                  className="bg-red-900/40 hover:bg-red-800 text-red-200 px-3 py-1 rounded"
+                  onClick={handleImportNames}
+                  className="w-full py-4 bg-yellow-600 hover:bg-yellow-500 text-red-950 font-black rounded-xl shadow-lg transition"
                 >
-                  删除
+                  保存并同步名单
                 </button>
               </div>
-            ))}
-            <button 
-              onClick={handleAddPrize}
-              className="w-full border-2 border-dashed border-white/20 hover:border-yellow-500/50 text-gray-400 py-3 rounded-xl transition"
-            >
-              + 添加新奖项
-            </button>
-          </div>
-        )}
+            )}
 
-        {activeTab === 'rigging' && (
-          <div className="space-y-6">
-            <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-              <h3 className="text-xl font-bold mb-4 text-yellow-400">操作说明</h3>
-              <p className="text-sm text-gray-300">
-                1. 选中“不中奖”：该人员永远不会被抽中。<br/>
-                2. 选中“指定奖项”：在该奖项抽取时，程序会优先确保选中的人员中奖（只要还有名额）。
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {state.participants.map(p => (
-                <div key={p.id} className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/5">
-                  <span className="font-medium">{p.name}</span>
-                  <div className="flex gap-2 text-xs">
+            {activeTab === 'prizes' && (
+              <div className="space-y-4">
+                {state.prizes.map(prize => (
+                  <div key={prize.id} className="bg-black/20 p-5 rounded-2xl border border-yellow-600/10 flex flex-col md:flex-row gap-6 items-end group hover:border-yellow-600/40 transition">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[10px] text-yellow-600/50 uppercase font-bold tracking-widest">奖项名称</label>
+                      <input 
+                        className="w-full bg-red-900/10 border-b border-yellow-600/20 px-0 py-2 text-xl font-bold text-yellow-400 focus:outline-none focus:border-yellow-500" 
+                        value={prize.name} 
+                        onChange={(e) => updatePrize(prize.id, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div className="w-24 space-y-2">
+                      <label className="text-[10px] text-yellow-600/50 uppercase font-bold tracking-widest">总数</label>
+                      <input 
+                        type="number" 
+                        className="w-full bg-red-900/10 border-b border-yellow-600/20 px-0 py-2 text-xl text-yellow-400 focus:outline-none" 
+                        value={prize.totalCount} 
+                        onChange={(e) => updatePrize(prize.id, 'totalCount', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="w-24 space-y-2">
+                      <label className="text-[10px] text-yellow-600/50 uppercase font-bold tracking-widest">单抽</label>
+                      <input 
+                        type="number" 
+                        className="w-full bg-red-900/10 border-b border-yellow-600/20 px-0 py-2 text-xl text-yellow-400 focus:outline-none" 
+                        value={prize.drawBatch} 
+                        onChange={(e) => updatePrize(prize.id, 'drawBatch', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
                     <button 
-                      onClick={() => toggleBlacklist(p.id)}
-                      className={`px-2 py-1 rounded transition ${state.rigging.blacklist.includes(p.id) ? 'bg-red-600 text-white' : 'bg-white/10 text-gray-400'}`}
+                      onClick={() => updateState({ ...state, prizes: state.prizes.filter(p => p.id !== prize.id) })}
+                      className="text-red-900 bg-red-500/20 hover:bg-red-500 p-2 rounded-lg transition"
                     >
-                      不中奖
+                      删除
                     </button>
-                    {state.prizes.map(prize => (
-                      <button 
-                        key={prize.id}
-                        onClick={() => toggleForced(prize.id, p.id)}
-                        className={`px-2 py-1 rounded transition ${(state.rigging.forcedWinners[prize.id] || []).includes(p.id) ? 'bg-green-600 text-white' : 'bg-white/10 text-gray-400'}`}
-                      >
-                        {prize.name}
-                      </button>
-                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                ))}
+                <button 
+                  onClick={handleAddPrize}
+                  className="w-full border-2 border-dashed border-yellow-600/20 py-6 rounded-2xl text-yellow-600 hover:bg-yellow-600/10 transition flex items-center justify-center gap-2"
+                >
+                  + 新增奖项配置
+                </button>
+              </div>
+            )}
 
-        <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
-          <button 
-            onClick={() => {
-              if (confirm('确定要清空所有中奖记录吗？')) {
-                updateState({ ...state, winners: [] });
-              }
-            }}
-            className="text-red-400 hover:text-red-300 text-sm mr-auto"
-          >
-            清空中奖记录
-          </button>
-          <button 
-            onClick={onClose}
-            className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold px-8 py-2 rounded-xl transition"
-          >
-            确定
-          </button>
+            {activeTab === 'rigging' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {state.participants.map(p => (
+                  <div key={p.id} className="flex items-center justify-between bg-black/20 p-4 rounded-xl border border-white/5 hover:border-yellow-600/30 transition">
+                    <span className="font-bold text-yellow-200">{p.name}</span>
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => toggleBlacklist(p.id)}
+                        className={`text-[10px] px-2 py-1 rounded transition ${state.rigging.blacklist.includes(p.id) ? 'bg-red-600 text-white' : 'bg-red-900/20 text-red-500/50 hover:bg-red-900/40'}`}
+                      >
+                        屏蔽
+                      </button>
+                      {state.prizes.map(prize => (
+                        <button 
+                          key={prize.id}
+                          onClick={() => toggleForced(prize.id, p.id)}
+                          className={`text-[10px] px-2 py-1 rounded transition ${(state.rigging.forcedWinners[prize.id] || []).includes(p.id) ? 'bg-yellow-600 text-red-900' : 'bg-yellow-900/10 text-yellow-600/40 hover:bg-yellow-900/20'}`}
+                        >
+                          {prize.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
