@@ -40,14 +40,15 @@ const App: React.FC = () => {
   const rollAudioRef = useRef<HTMLAudioElement | null>(null);
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 初始化滚动名单池，循环所有姓名
+  // 初始化滚动名单池，确保全名单库循环滚动
   useEffect(() => {
     if (state.participants.length > 0) {
       const allNames = state.participants.map(p => p.name);
       const newPools = Array.from({ length: 25 }).map(() => {
-        // 将全量名单打乱并循环
+        // 每个格子生成一个打乱的完整名单
         let shuffled = [...allNames].sort(() => Math.random() - 0.5);
-        while (shuffled.length < 40) {
+        // 保证名单长度足以填充动画区间
+        while (shuffled.length < 30) {
           shuffled = [...shuffled, ...shuffled];
         }
         return shuffled;
@@ -68,8 +69,8 @@ const App: React.FC = () => {
   const remainingCount = currentPrize ? currentPrize.totalCount - allPrizeWinners.length : 0;
 
   const getScrollSpeed = (index: number) => {
-    const base = 0.22;
-    const offset = (index % 8) * 0.045;
+    const base = 0.2;
+    const offset = (index % 12) * 0.035;
     return `${base + offset}s`;
   };
 
@@ -143,12 +144,14 @@ const App: React.FC = () => {
     }));
   };
 
+  // 动态调整中奖区域的卡片大小，确保一行 5 个时的视觉平衡
   const getResultsDisplayConfig = () => {
     const count = tempWinners.length;
     if (count <= 1) return { fontSize: 'text-9xl', cardSize: 'w-[450px] h-[260px]' };
     if (count <= 4) return { fontSize: 'text-7xl', cardSize: 'w-[300px] h-[180px]' };
+    // 一行 5 个时，容器宽度 1152px，单个卡片 200px 左右最为平均
     if (count <= 10) return { fontSize: 'text-5xl', cardSize: 'w-[200px] h-[130px]' };
-    return { fontSize: 'text-3xl', cardSize: 'w-[160px] h-[100px]' };
+    return { fontSize: 'text-4xl', cardSize: 'w-[180px] h-[110px]' };
   };
 
   const gridConfig = getResultsDisplayConfig();
@@ -158,7 +161,6 @@ const App: React.FC = () => {
       <audio ref={rollAudioRef} src="https://assets.mixkit.co/active_storage/sfx/2012/2012-preview.mp3" />
       <audio ref={winAudioRef} src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" />
 
-      {/* 头部布局：仅保留右侧设置按钮 */}
       <header className="px-10 py-6 flex justify-end items-center z-20">
         <button 
           onClick={() => setShowSettings(true)}
@@ -170,7 +172,6 @@ const App: React.FC = () => {
 
       <main className="flex-1 flex flex-col items-center justify-center px-6 md:px-10 pb-10 z-10 relative">
         
-        {/* 奖项控制区 */}
         <div className="mb-6 flex items-center justify-center gap-6 md:gap-12">
           <button onClick={() => navigatePrize('prev')} className="prize-nav-btn p-2">
             <ICONS.ArrowLeft />
@@ -188,13 +189,12 @@ const App: React.FC = () => {
           </button>
         </div>
 
-        {/* 核心显示区域 */}
         <div className="relative w-full max-w-6xl min-h-[580px] h-[580px]">
           <div className="absolute -inset-1.5 border-gold-pro opacity-50 rounded-[2.5rem] pointer-events-none"></div>
           <div className="h-full w-full glass-dark border-gold-pro rounded-[2.5rem] overflow-hidden flex items-center justify-center relative shadow-2xl">
             
             {isDrawing ? (
-              // 5x5 滚动网格：循环不同姓名
+              // 抽奖开始：5x5 网格按名单列表循环滚动
               <div className="grid grid-cols-5 gap-3 w-full h-full p-4 md:p-8">
                 {gridPools.length > 0 ? gridPools.map((pool, i) => (
                   <div key={i} className="flex-1 glass-dark rounded-2xl flex items-center justify-center overflow-hidden border border-yellow-500/10 bg-black/30">
@@ -212,43 +212,38 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 )) : (
-                  <div className="col-span-5 flex items-center justify-center text-yellow-600/30 text-xl font-bold uppercase tracking-widest">请先录入名单</div>
+                  <div className="col-span-5 flex items-center justify-center text-yellow-600/30 text-xl font-bold uppercase tracking-widest">请先录入名单库</div>
                 )}
               </div>
             ) : tempWinners.length > 0 ? (
-              // 中奖区域：横向纵向居中，一排最多 5 个名单
+              // 抽奖停止：中奖区域一行最多5个平均分布，横向纵向居中
               <div className="w-full h-full flex items-center justify-center p-8 overflow-y-auto scrollbar-hide">
-                <div className="flex flex-wrap items-center justify-center gap-8 max-w-full">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 justify-items-center items-center">
-                    {tempWinners.map(winner => (
-                      <div key={winner.id} className="relative animate-[zoom-in_0.5s_ease-out] flex justify-center items-center">
-                        <div className="absolute -inset-10 bg-yellow-400 opacity-20 blur-[50px] rounded-full"></div>
-                        <div className={`relative bg-gradient-to-b from-yellow-50 via-yellow-400 to-yellow-600 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.8)] border-4 border-yellow-100 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 ${gridConfig.cardSize}`}>
-                          <div className={`text-red-950 font-festive font-black leading-none drop-shadow-xl ${gridConfig.fontSize}`}>
-                            {winner.name}
-                          </div>
-                          {tempWinners.length <= 10 && (
-                            <div className="mt-3 text-red-900 text-[10px] font-black tracking-[0.4em] uppercase opacity-70">Lucky Winner</div>
-                          )}
+                <div className="flex flex-wrap justify-center content-center gap-8 max-w-full">
+                  {tempWinners.map(winner => (
+                    <div key={winner.id} className="relative animate-[zoom-in_0.5s_ease-out] flex justify-center items-center">
+                      <div className="absolute -inset-10 bg-yellow-400 opacity-20 blur-[50px] rounded-full"></div>
+                      <div className={`relative bg-gradient-to-b from-yellow-50 via-yellow-400 to-yellow-600 rounded-[2.5rem] shadow-[0_25px_60px_rgba(0,0,0,0.8)] border-4 border-yellow-100 flex flex-col items-center justify-center transition-all duration-300 hover:scale-110 ${gridConfig.cardSize}`}>
+                        <div className={`text-red-950 font-festive font-black leading-none drop-shadow-xl text-center px-4 ${gridConfig.fontSize}`}>
+                          {winner.name}
                         </div>
+                        {tempWinners.length <= 15 && (
+                          <div className="mt-3 text-red-900 text-[10px] font-black tracking-[0.4em] uppercase opacity-70">Lucky Winner</div>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
-              // 默认显示礼物盒
               <div className="flex flex-col items-center gap-10">
                 <GiftBox />
-                <div className="text-yellow-500/20 text-sm font-bold tracking-[1.8em] ml-[1.8em] uppercase animate-pulse text-center">Ready to open</div>
+                <div className="text-yellow-500/20 text-sm font-bold tracking-[1.8em] ml-[1.8em] uppercase animate-pulse text-center">Ready to draw</div>
               </div>
             )}
           </div>
         </div>
 
-        {/* 底部交互区 */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-6 md:gap-10">
-          
           <div className="flex items-center glass-dark rounded-2xl p-1 border-yellow-600/20">
              <button onClick={() => handleBatchChange(-1)} className="w-12 h-12 flex items-center justify-center text-yellow-500 hover:bg-yellow-500/10 rounded-xl transition-colors font-black text-2xl">-</button>
              <div className="px-6 flex flex-col items-center min-w-[100px]">
