@@ -19,7 +19,6 @@
             font-family: 'Noto Sans SC', sans-serif;
             background-color: var(--deep-red);
             color: #fff;
-            /* 允许纵向滚动以防止小屏幕显示不全 */
             overflow-y: auto;
             min-height: 100vh;
             background-image: radial-gradient(circle at 50% 50%, #800000 0%, #4a0404 100%);
@@ -27,6 +26,11 @@
 
         .font-festive {
             font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        /* 宋体样式 */
+        .font-song {
+            font-family: "SimSun", "STSong", "Songti SC", "serif";
         }
 
         .border-gold-pro {
@@ -43,14 +47,6 @@
         .btn-gold-3d:active {
             box-shadow: 0 1px 0 #92400e, 0 2px 5px rgba(0,0,0,0.4);
             transform: translateY(3px);
-        }
-
-        @keyframes grid-scroll {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-50%); }
-        }
-        .animate-grid-scroll {
-            animation: grid-scroll var(--scroll-speed, 0.3s) linear infinite;
         }
 
         .glass-dark {
@@ -92,6 +88,5 @@
 </head>
 <body>
     <div id="root" class="relative z-10 min-h-full"></div>
-    <script type="module" src="/index.tsx"></script>
 </body>
 </html>
