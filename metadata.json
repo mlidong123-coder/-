@@ -1,7 +1,5 @@
 {
   "name": "公司年会至尊抽奖系统",
   "description": "一个功能齐全的公司年会抽奖应用，支持名单导入、奖项自定义、内定及黑名单设置，并配有动感音乐与精美动画。",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "requestFramePermissions": []
 }
